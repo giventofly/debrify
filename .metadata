@@ -33,6 +33,9 @@ migration:
     - platform: windows
       create_revision: edada7c56edf4a183c1735310e123c7f923584f1
       base_revision: edada7c56edf4a183c1735310e123c7f923584f1
+    - platform: webos
+      create_revision: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
+      base_revision: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
 
   # User provided section
 

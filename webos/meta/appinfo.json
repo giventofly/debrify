@@ -1,0 +1,22 @@
+{
+    "id": "com.debrify.app",
+    "version": "0.9.0",
+    "vendor": "Debrify",
+    "type": "native",
+    "main": "debrify",
+    "title": "Debrify",
+    "icon": "icon.png",
+    "iconColor": "#ffffff",
+    "largeIcon": "icon.png",
+    "handlesRelaunch": true,
+    "visible": true,
+    "defaultWindowType": "card",
+    "trustLevel": "default",
+    "locationHint":"none",
+    "noSplashOnLaunch":true,
+    "spinnerOnLaunch": false,
+    "transparent":false,
+    "uiRevision":2,
+    "requiredACG": [
+    ]
+}
