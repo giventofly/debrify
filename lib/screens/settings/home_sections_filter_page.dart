@@ -13,6 +13,7 @@ import '../../services/storage_service.dart';
 import '../../services/trakt/trakt_list_source.dart';
 import '../../services/analytics_service.dart';
 import '../../utils/tv_keys.dart';
+import '../../utils/reorder_compat.dart';
 import '../../widgets/home/home_theme.dart';
 import '../../models/tracking_source.dart';
 
@@ -1024,7 +1025,7 @@ class _HomeSectionsFilterPageState extends State<HomeSectionsFilterPage> {
             buildDefaultDragHandles: false,
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
             itemCount: entries.length,
-            onReorderItem: _moveArrangeEntry,
+            onReorder: postRemovalReorder(_moveArrangeEntry),
             itemBuilder: (context, i) {
               final entry = entries[i];
               final node = _arrangeNodes[i];

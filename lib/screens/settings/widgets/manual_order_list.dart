@@ -7,6 +7,7 @@ import '../../../theme/app_theme_scope.dart';
 import '../../../utils/platform_util.dart';
 import '../../../utils/tv_keys.dart';
 import '../../../utils/tv_reveal.dart';
+import '../../../utils/reorder_compat.dart';
 import '../../../widgets/tv_text_field.dart';
 import 'settings_widgets.dart';
 
@@ -518,7 +519,9 @@ class ManualOrderListState extends State<ManualOrderList> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
       buildDefaultDragHandles: false,
       itemCount: items.length,
-      onReorderItem: widget.enabled ? widget.onMove : (_, _) {},
+      onReorder: postRemovalReorder(
+        widget.enabled ? widget.onMove : (_, _) {},
+      ),
       itemBuilder: (context, index) => ManualOrderRow(
         key: ValueKey(items[index].id),
         item: items[index],

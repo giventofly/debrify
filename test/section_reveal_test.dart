@@ -48,7 +48,9 @@ Widget _host({
                 // Builds the section well below the fold, the way the Showcase
                 // page's own list does — which is the condition a mount
                 // trigger gets wrong.
-                scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+                // `cacheExtent` mirrors the app: 3.38 (the webOS SDK pin)
+                // has no `scrollCacheExtent`.
+                cacheExtent: 2000,
                 children: [SizedBox(height: spacer), section],
               )
             : section,

@@ -11,6 +11,7 @@ import '../../theme/app_theme_scope.dart';
 import '../../utils/platform_util.dart';
 import '../../utils/tv_keys.dart';
 import '../../utils/tv_reveal.dart';
+import '../../utils/reorder_compat.dart';
 import 'widgets/settings_widgets.dart';
 
 /// Quick Play settings, simplified: Movies/Series tabs, an "Addon Priority"
@@ -567,7 +568,7 @@ class _QuickPlaySettingsPageState extends State<QuickPlaySettingsPage> {
         physics: const NeverScrollableScrollPhysics(),
         buildDefaultDragHandles: false,
         itemCount: _ordered.length,
-        onReorderItem: _moveRow,
+        onReorder: postRemovalReorder(_moveRow),
         itemBuilder: (context, i) => _rowAt(i),
       ),
     );

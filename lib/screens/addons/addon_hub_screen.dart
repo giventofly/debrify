@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1476,7 +1475,11 @@ class _AddonHubScreenState extends State<AddonHubScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 4, 24, 32),
                   // DPAD can only move to rows that are BUILT — pre-build far
                   // past the viewport so focus never hits an unbuilt-row wall.
-                  scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+                  // `cacheExtent`, not `scrollCacheExtent`: 3.38 (the webOS
+                  // SDK pin) has only this spelling, and 3.44 converts it to
+                  // ScrollCacheExtent.pixels() internally. Deprecation info
+                  // on 3.44 is expected — revert when the pin passes 3.41.
+                  cacheExtent: 2000,
                   itemCount: items.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 14),
                   itemBuilder: (_, i) => _InstalledRow(
@@ -1778,7 +1781,8 @@ class _AddonHubScreenState extends State<AddonHubScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 32),
       // See installed list — keep DPAD off the unbuilt wall.
-      scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+      // `cacheExtent` for the webOS 3.38 pin — see the installed list above.
+      cacheExtent: 2000,
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemBuilder: (_, i) {
@@ -1826,7 +1830,8 @@ class _AddonHubScreenState extends State<AddonHubScreen> {
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 32),
-      scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+      // `cacheExtent` for the webOS 3.38 pin — see the installed list above.
+      cacheExtent: 2000,
       children: [
         if (_importedEngines.isNotEmpty) ...[
           _engineSectionHeader('Imported', _importedEngines.length),

@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 
 import '../../models/stremio_addon.dart';
@@ -1109,7 +1108,8 @@ class _DetailShowcaseState extends State<DetailShowcase> {
                 // DPAD moves focus before it scrolls. Keep the original broad
                 // mount window so the next target has a live node and anchor;
                 // the opaque opening plane hides these bands while they warm.
-                scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
+                // `cacheExtent` for the webOS 3.38 pin — see reorder_compat.dart.
+                cacheExtent: 1200,
                 children: [
                   ShowcaseIdentity(
                     key: _identityKey,

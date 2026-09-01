@@ -10,6 +10,7 @@ import '../../services/storage_service.dart';
 import '../../theme/app_theme_scope.dart';
 import '../../utils/platform_util.dart';
 import '../../utils/tv_keys.dart';
+import '../../utils/reorder_compat.dart';
 import '../../widgets/tv_text_field.dart';
 import 'widgets/settings_widgets.dart';
 
@@ -360,7 +361,7 @@ class _SidebarCustomizationPageState extends State<SidebarCustomizationPage> {
                             : null,
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                         itemCount: _configuration.order.length,
-                        onReorderItem: _moveTo,
+                        onReorder: postRemovalReorder(_moveTo),
                         itemBuilder: (context, index) {
                           final id = _configuration.order[index];
                           final destination = sidebarDestinationById[id]!;
