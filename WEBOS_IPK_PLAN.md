@@ -1,8 +1,9 @@
 # Debrify on LG webOS — `.ipk` packaging plan
 
-Status: **research + plan — currently BLOCKED on hardware.** No app code in this branch. The
-Flutter-version-skew question has been measured (§6). The available TV runs **webOS 25**, and
-`flutter-webos` requires webOS 26+, so Phase 0 cannot start yet. See §8.
+Status: **BLOCKED on hardware; the no-TV prep work is done.** The available TV runs **webOS 25**
+and `flutter-webos` requires webOS 26+, so Phase 0 cannot start yet (§8). Everything that could
+be done without a device has been: the 3.38 skew was measured and shimmed, and the
+desktop-Linux/webOS split is in. Both landed on this branch — see §7.
 
 ---
 
@@ -177,12 +178,27 @@ desktop branch in the app lights up on a television:
 - `PlatformUtil.supportsSubtitleAutoSync` returns true for `Platform.isLinux`
 - `dev/scripts/bundle_linux_mpv.sh` assumptions do not apply
 
-**Action, and this is step one of the whole port:** add `PlatformUtil.isWebOS` (detected from a
-build-time define set by the webOS build, not from `Platform.operatingSystem` alone), make
-`PlatformUtil.isTelevision` return true for it, and audit every `Platform.isLinux` site for
-whether it means "desktop Linux" or "any Linux". Given the file already carries careful doc
-comments about exactly this class of bug on tvOS (`Platform.isIOS` being true on Apple TV), the
-pattern to follow is established — this is the same mistake one platform over.
+**DONE.** `PlatformUtil` now carries `isWebOS` (a compile-time
+`bool.fromEnvironment('DEBRIFY_WEBOS')`, deliberately not derived from
+`Platform.operatingSystem`), plus `isDesktopLinux` and `isDesktop`. `isTelevision` counts webOS,
+so the existing 10-foot/D-pad/memory policies apply with no call-site changes. All 42
+`Platform.isLinux` sites across 17 files moved to `isDesktopLinux`, each surrounding expression
+left in its original shape. Because `isWebOS` is a compile-time `false` in every build that
+exists today, every substitution is a provable no-op on current platforms — confirmed by an
+unchanged full test suite.
+
+`analytics_service` needed one deliberate extra: an explicit webOS branch *before* the Linux one,
+since `isDesktopLinux` excludes webOS and the label would otherwise have been `'unknown'`.
+
+A `--dart-define` probe confirms the mechanism end to end. On the same Linux host:
+
+| build | `isWebOS` | `isTelevision` | `isDesktopLinux` |
+|---|---|---|---|
+| default | `false` | `false` | `true` |
+| `--dart-define=DEBRIFY_WEBOS=true` | `true` | `true` | `false` |
+
+The webOS build must pass that define; without it the app would identify as a Linux desktop on a
+television, which is the whole bug this prevents.
 
 ### Flutter version skew — MEASURED
 
@@ -261,6 +277,27 @@ Accept the one deprecation info on 3.44.8, or suppress it locally with an ignore
 That is pre-existing, version-independent, and doubly irrelevant here — media_kit is cut on webOS
 anyway (§4).
 
+#### Separately: the *test suite* has its own 3.38 incompatibility
+
+App code is clean on 3.38, but the tests are not quite. Full suite on 3.38.10: **4115 pass, 40
+fail across 18 files**. Running those same 18 files on 3.44.8 shows **13 of them fail there too**
+— pre-existing and version-independent (goldens, fonts, environment). That leaves **5 files that
+fail only on 3.38**:
+
+`test/iptv_category_order_page_test.dart` · `test/profiles/profile_recovery_screen_test.dart` ·
+`test/profiles/profile_setup_flow_test.dart` ·
+`test/profiles/self_profile_settings_page_test.dart` · `test/tv_hold_ok_test.dart`
+
+One is diagnosed: `TextButton.icon` is a **factory returning the private subclass**
+`_TextButtonWithIcon` in 3.38, but a **generative constructor on `TextButton` itself** in 3.44.
+`find.byType` matches exact runtime type, so `find.widgetWithText(TextButton, …)` finds nothing on
+3.38 and `tester.widget<TextButton>` throws `Bad state: No element`. It is a *finder*
+incompatibility, not an app bug — the button renders fine on both.
+
+The other four are **not diagnosed**; only two of the five even use those button finders. Scope
+this as its own small task when the port is unblocked. It does not affect the app, only whether
+`flutter test` is green on the webOS toolchain.
+
 **Conclusion:** the skew costs roughly a day, not a re-architecture. It does not gate the port.
 Prefer small compatibility shims over pinning the whole repo back to 3.38 — the other five
 platforms should stay on 3.44.8.
@@ -288,8 +325,9 @@ Gate the rest of the work on this.
 support answered. (3.38 skew: already quantified.)
 
 ### Phase 1 — Platform identity and compile-clean · ~3–5 days
-1. `PlatformUtil.isWebOS` + `isTelevision` wiring; build-time define from the webOS build.
-2. Audit all `Platform.isLinux` sites; split "desktop Linux" from "any Linux".
+1. ~~`PlatformUtil.isWebOS` + `isTelevision` wiring; build-time define.~~ **DONE** — see §6.
+2. ~~Audit all `Platform.isLinux` sites; split "desktop Linux" from "any Linux".~~ **DONE** —
+   42 sites, 17 files.
 3. `flutter-webos create --platforms webos .` to generate `webos/` alongside `android/`,
    `linux/`, etc.; commit `webos/meta/flutter-conf.json` and `appinfo.json`
    (`"transparent": true`, app id, icons from `assets/`).
