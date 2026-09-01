@@ -1,7 +1,7 @@
 # Debrify on LG webOS — `.ipk` packaging plan
 
-Status: **research + plan only.** No code in this branch. Every "verify" item below is
-something that cannot be settled without an actual webOS 26 TV in developer mode.
+Status: **research + plan.** No app code in this branch. The Flutter-version-skew question has
+been measured (§6); every remaining "verify" item needs an actual webOS 26 TV in developer mode.
 
 ---
 
@@ -70,7 +70,7 @@ a separate, much thinner "remote + browse" app rather than a Debrify port.
 | **Reach over time** | webOS 26 began rolling out ~Aug 2026 starting with the 2025 G5 OLED, cascading to C-series, premium LCD and B-series, with 2024/2023/2022 sets scheduled late 2026 → early 2027. | Reach is small today and grows for ~a year. Ship when the audience exists. |
 | **Host OS** | Ubuntu 22.04 / 24.04 / 26.04 only. | Fine for CI (`ubuntu-latest`); contributors on macOS/Windows need WSL2 or a devcontainer. |
 | **Toolchain** | webOS NDK `starfish-x86_64-ca9v1`, target triple `webosmllib32-linux-gnueabi` → **32-bit ARM (armv7, Cortex-A9 baseline)**. ares CLI ≥ 3.2.4, which itself needs Node **14.15.1–16.20.2**. | Any native lib we bundle must be cross-compiled armhf. Node version pin conflicts with our normal tooling — isolate it. |
-| **Flutter version skew** | `flutter-webos` is pinned to **Flutter 3.38.10** (`bin/internal/flutter.version` = `c6f67dede3…`). Debrify CI builds on **3.44.8**. | Real risk. See §6. |
+| **Flutter version skew** | `flutter-webos` is pinned to **Flutter 3.38.10** (`bin/internal/flutter.version` = `c6f67dede3…`). Debrify CI builds on **3.44.8**. | **Measured — not a blocker.** 18 analyzer errors across 6 files. See §6. |
 | **Rendering** | Skia by default; Impeller is opt-in via `webos/meta/flutter-conf.json` → `engine-switches.enable-impeller`. | A perf lever to test, not a default. |
 | **Luna access** | Every Luna Service call is gated by ACG groups declared in the app's permission config; bridged through `webos_service_bridge`. | Anything beyond the default grants needs an explicit ACG declaration. |
 
@@ -183,17 +183,37 @@ whether it means "desktop Linux" or "any Linux". Given the file already carries 
 comments about exactly this class of bug on tvOS (`Platform.isIOS` being true on Apple TV), the
 pattern to follow is established — this is the same mistake one platform over.
 
-### Flutter version skew
+### Flutter version skew — MEASURED
 
-`flutter-webos` is pinned to 3.38.10; we build on 3.44.8. Debrify's `pubspec.yaml` already
-records a version-sensitive dependency (`google_fonts: ^8.2.1`, needed "from Flutter 3.44"
-because 6.x fails constant evaluation there). Going *backwards* to 3.38 may surface the mirror
-problem: newer framework APIs used in our code that do not exist in 3.38.
+`flutter-webos` is pinned to **Flutter 3.38.10**; we build on **3.44.8**. This has now been
+measured rather than guessed, by installing 3.38.10 and running the analyzer against this repo.
 
-**Probe before committing to the port:** check out the repo against Flutter 3.38.10 and run
-`flutter analyze` + `flutter build linux`. If it is clean, the skew is a non-issue for now. If
-it is not, either the port waits for LG to advance the pin, or we constrain ourselves to the
-3.38 API surface.
+**Confirmation of the pin.** Flutter 3.38.10's release hash is `c6f67dede3` with Dart 3.10.9 —
+byte-for-byte the revision in `flutter-webos/bin/internal/flutter.version` and the version banner
+in LG's getting-started doc. The pin is exactly stable 3.38.10, not a fork.
+
+**Dependency resolution: clean.** `flutter pub get` succeeds on 3.38.10 with only 6 dependency
+downgrades and no resolution failure. The `google_fonts ^8.2.1` constraint that `pubspec.yaml`
+warns about for 3.44 causes no trouble going backwards.
+
+**Analyzer: 18 errors in `lib/`, across 6 files, in 3 API families.** All are Flutter framework
+APIs that exist in 3.44 and not in 3.38 — no architectural blocker, no third-party breakage:
+
+| API | Sites | Fix |
+|---|---|---|
+| `ScrollCacheExtent` / `scrollCacheExtent:` | `screens/addons/addon_hub_screen.dart` (1479, 1781, 1829), `widgets/detail/detail_layout_showcase.dart` (1112) | A scroll perf hint with no behavioural contract — drop it behind a version shim. |
+| `ReorderableList`'s `onReorderItem:` (3.38 requires `onReorder:`) | `screens/settings/home_sections_filter_page.dart` (1023/1027), `screens/settings/quick_play_settings_page.dart` (565/570), `screens/settings/sidebar_customization_page.dart` (354/363), `screens/settings/widgets/manual_order_list.dart` (516/521) | A signature rename — adapt the callback. `manual_order_list.dart` is the shared widget, so the other three may fall out for free. |
+| `TickerMode.valuesOf` | `widgets/movie_watched_badge.dart` (56, 71) | Use `TickerMode.of`. |
+
+**Ignore the package noise.** The run also reports 917 errors under `packages/`, but 834 are in
+`packages/media_kit_patched/`'s **own test suite**, which has no `test` dev-dependency to resolve
+(`Target of URI doesn't exist: 'package:test/test.dart'`, then every `test()`/`setUp()` undefined).
+That is pre-existing, version-independent, and doubly irrelevant here — media_kit is cut on webOS
+anyway (§4).
+
+**Conclusion:** the skew costs roughly a day, not a re-architecture. It does not gate the port.
+Prefer small compatibility shims over pinning the whole repo back to 3.38 — the other five
+platforms should stay on 3.44.8.
 
 ---
 
@@ -210,11 +230,12 @@ Gate the rest of the work on this.
 3. On device, print `Platform.operatingSystem`, `Platform.version`, CPU arch, available memory.
 4. Run the `video_player_webos` example. Answer the two scoping questions: **does it expose
    embedded audio/subtitle tracks in practice, and does a loopback proxy stream play?**
-5. Check out Debrify at Flutter 3.38.10; run `flutter analyze` and a Linux build. Record the
-   damage.
+5. ~~Check out Debrify at Flutter 3.38.10; run `flutter analyze`.~~ **Done — see §6.** 18 errors
+   in 6 files. Optionally confirm with a full `flutter build linux` on 3.38.10 once those are
+   shimmed.
 
 **Exit criteria:** hello-world `.ipk` runs on hardware, OS-identity answer known, player track
-support answered, 3.38 skew quantified.
+support answered. (3.38 skew: already quantified.)
 
 ### Phase 1 — Platform identity and compile-clean · ~3–5 days
 1. `PlatformUtil.isWebOS` + `isTelevision` wiring; build-time define from the webOS build.
@@ -252,19 +273,22 @@ caveat stated honestly, alongside `docs/iOS-Installation.md`.
 
 ## 8. Open questions
 
-1. **Is there a webOS 26 TV to test on?** Hard blocker for everything past Phase 0.
+1. **Is the available TV running webOS 26?** A webOS TV is confirmed available; the OS version is
+   not. `flutter-webos` requires webOS 26+, so this is still the hard gate for everything past
+   Phase 0. Check under Settings → Support → TV Information.
 2. Does `video_player_webos` expose embedded track selection in practice? Decides whether Phase 2
    is "adapt" or "lose a feature".
 3. What does `Platform.operatingSystem` actually return?
-4. Does Debrify build against Flutter 3.38.10?
+4. ~~Does Debrify build against Flutter 3.38.10?~~ **Answered: yes, with 18 errors in 6 files.**
+   See §6.
 5. Is `pug_flutter` (analytics) portable, or stubbed on webOS?
 6. Given Dev-Mode-only distribution, is the reachable audience worth the effort — or is this
    better parked until webosbrew regains webOS 26 support?
 
 ## 9. What would kill this
 
-- No test hardware.
-- Debrify does not compile on Flutter 3.38 and LG does not advance the pin.
+- No webOS **26** hardware (an older webOS TV does not unblock this).
+- ~~Debrify does not compile on Flutter 3.38.~~ Ruled out — see §6.
 - `video_player_webos` has no track selection *and* no path to it — Debrify's playback identity
   is multi-track/multi-subtitle handling, and a player that cannot switch audio tracks is a
   different product.
