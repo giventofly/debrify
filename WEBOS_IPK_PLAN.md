@@ -236,11 +236,24 @@ its callers and should need no change once this one is fixed. `_move`'s existing
 `to >= _items.length` guard stays correct — an end-of-list drop gives `newIndex == length`, which
 the adjustment brings back into range.
 
-**Preferred shape: target the 3.38 API surface, not a conditional.** Dart has no preprocessor, so
-a version-conditional is awkward. All three older APIs (`cacheExtent`, `TickerMode.of`,
-`onReorder`) are expected to still exist in 3.44 — write to those once and both toolchains
-compile from a single code path. **Verify with `flutter analyze` on both 3.38.10 and 3.44.8
-before merging**; that dual-version check is the acceptance test for this work.
+**Preferred shape: target the 3.38 API surface, not a conditional — VERIFIED.** Dart has no
+preprocessor, so a version-conditional is awkward. All three older APIs were checked against both
+framework sources and a single code path does compile on both:
+
+| API | 3.38.10 | 3.44.8 | Verdict |
+|---|---|---|---|
+| `ListView(cacheExtent:)` | present | present, not deprecated | Safe on both. |
+| `TickerMode.of(context)` → `bool` | present | present (`valuesOf` is the newer addition alongside it) | Safe on both. |
+| `ReorderableListView(onReorder:)` | present, required | present but **deprecated after v3.41.0-0.0.pre** | Compiles on both; emits a deprecation *info* (not an error) on 3.44.8. |
+
+3.44.8's own deprecation text corroborates the trap above independently: *"Use the onReorderItem
+callback instead. The onReorderItem callback adjusts the newIndex parameter for a removed item at
+the oldIndex."* — i.e. `onReorder` does **not** adjust, which is exactly why the shim must.
+Its constructor also asserts that exactly one of the two callbacks is non-null, so pass `onReorder`
+alone, never both.
+
+**Acceptance test for this work: `flutter analyze` clean in `lib/` on both 3.38.10 and 3.44.8.**
+Accept the one deprecation info on 3.44.8, or suppress it locally with an ignore comment.
 
 **Ignore the package noise.** The run also reports 917 errors under `packages/`, but 834 are in
 `packages/media_kit_patched/`'s **own test suite**, which has no `test` dev-dependency to resolve
