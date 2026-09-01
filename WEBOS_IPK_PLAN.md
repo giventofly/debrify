@@ -388,3 +388,88 @@ caveat stated honestly, alongside `docs/iOS-Installation.md`.
   different product.
 - webosbrew stays broken on webOS 26 and Developer Mode friction keeps real-world installs near
   zero.
+
+---
+
+## 10. How to build the `.ipk` (verified end to end)
+
+This was run for real on Ubuntu 24.04 x86_64 and produced
+`build/webos/arm/release/ipk/com.debrify.app_0.9.0_arm.ipk` (31 MB).
+**Building needs no TV** — only installing does.
+
+### One-time setup
+
+```bash
+# 1. Host packages
+sudo apt-get update
+sudo apt-get install -y curl unzip cmake pkg-config file libgtk-3-0 libgtk-3-dev \
+                        git ninja-build clang git-lfs
+
+# 2. The flutter-webos SDK
+git clone https://github.com/lg-flutter-webos/flutter-webos.git
+export PATH="$PATH:$PWD/flutter-webos/bin"
+
+# 3. The webOS NDK (~326 MB download; installs to /usr/local/starfish-sdk-x86_64)
+mkdir -p NDK && cd NDK
+wget https://github.com/lg-flutter-webos/ndk/releases/download/11.2.0/webos-ndk-flutter-starfish-x86_64-ca9v1-11.2.0.sh
+chmod +x webos-ndk-flutter-starfish-x86_64-ca9v1-11.2.0.sh
+./webos-ndk-flutter-starfish-x86_64-ca9v1-11.2.0.sh -y
+cd ..
+export WEBOS_FLUTTER_NDK_ENV="/usr/local/starfish-sdk-x86_64/environment-setup-ca9v1-webosmllib32-linux-gnueabi"
+
+# 4. The ares CLI (needs Node 14.15.1-16.20.2 — NOT a newer Node)
+#    Install Node 16 separately; a newer default Node breaks the npm install
+#    and leaves dangling symlinks that look installed but are not.
+npm install @webos-tools/cli          # then invoke its bin/*.js under Node 16
+ares-package --version                # must be >= 3.2.4
+
+# 5. Engine artifacts
+flutter-webos precache
+flutter-webos doctor                  # Flutter / webOS toolchain / Linux toolchain must be green
+```
+
+The `PATH`, `WEBOS_FLUTTER_NDK_ENV` exports must be re-run in every new shell.
+
+### Build
+
+`webos/` is committed, so `flutter-webos create` does **not** need re-running.
+
+```bash
+flutter-webos build webos --release --dart-define=DEBRIFY_WEBOS=true
+```
+
+Output: `build/webos/{arch}/{mode}/ipk/{id}_{version}_{arch}.ipk`
+
+**The `--dart-define=DEBRIFY_WEBOS=true` is mandatory.** Without it `PlatformUtil.isWebOS` is
+false and the app identifies as a Linux desktop on a television — see §6.
+
+### Install (needs a webOS 26 TV in Developer Mode)
+
+```bash
+flutter-webos config --enable-custom-devices
+flutter-webos custom-devices add          # id, IP, port 9922
+flutter-webos custom-devices get-key -d <device>   # uses the Dev Mode passphrase
+flutter-webos run -d <device> --release   # builds, packages, installs, launches
+```
+
+### What the build does and does not prove
+
+It proves the toolchain, the cross-compile and the packaging all work: the runner is an
+`ELF 32-bit LSB pie executable, ARM, EABI5`, and the engine artifacts come from a release tagged
+`c6f67dede3-webos26-1`.
+
+It does **not** prove the app works. `webos/flutter/generated_plugins.cmake` and both plugin
+registrants come out **empty** — no dependency declares a `webos` platform, so every plugin is
+dropped and each call throws `MissingPluginException` at runtime. Storage, database, paths and
+playback are all in that set. Adding the `_webos` siblings from §4 is the next step, and needs a
+device to validate.
+
+### Two scaffold traps
+
+- `flutter-webos create` **rewrites `.metadata`**, dropping the android/ios/linux/macos/web/windows
+  entries and repointing the root revision at the webOS SDK. If it is ever re-run, hand-merge:
+  keep the original revision and platforms, add only a `webos` entry.
+- The generated `appinfo.json` ships LG's defaults (`com.flutter.app.*`, vendor "LG Electronics").
+  Those are corrected in the committed copy. `transparent` is still `false`; `video_player_webos`
+  requires `true`, so flip it when the player work lands — not before, since an untested
+  transparent surface risks a black screen.
