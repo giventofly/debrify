@@ -1,7 +1,8 @@
 # Debrify on LG webOS — `.ipk` packaging plan
 
-Status: **research + plan.** No app code in this branch. The Flutter-version-skew question has
-been measured (§6); every remaining "verify" item needs an actual webOS 26 TV in developer mode.
+Status: **research + plan — currently BLOCKED on hardware.** No app code in this branch. The
+Flutter-version-skew question has been measured (§6). The available TV runs **webOS 25**, and
+`flutter-webos` requires webOS 26+, so Phase 0 cannot start yet. See §8.
 
 ---
 
@@ -201,9 +202,45 @@ APIs that exist in 3.44 and not in 3.38 — no architectural blocker, no third-p
 
 | API | Sites | Fix |
 |---|---|---|
-| `ScrollCacheExtent` / `scrollCacheExtent:` | `screens/addons/addon_hub_screen.dart` (1479, 1781, 1829), `widgets/detail/detail_layout_showcase.dart` (1112) | A scroll perf hint with no behavioural contract — drop it behind a version shim. |
-| `ReorderableList`'s `onReorderItem:` (3.38 requires `onReorder:`) | `screens/settings/home_sections_filter_page.dart` (1023/1027), `screens/settings/quick_play_settings_page.dart` (565/570), `screens/settings/sidebar_customization_page.dart` (354/363), `screens/settings/widgets/manual_order_list.dart` (516/521) | A signature rename — adapt the callback. `manual_order_list.dart` is the shared widget, so the other three may fall out for free. |
-| `TickerMode.valuesOf` | `widgets/movie_watched_badge.dart` (56, 71) | Use `TickerMode.of`. |
+| `ScrollCacheExtent` / `scrollCacheExtent:` | `screens/addons/addon_hub_screen.dart` (1479, 1781, 1829), `widgets/detail/detail_layout_showcase.dart` (1112) | **Not droppable** — the call sites' own comment says "DPAD can only move to rows that are BUILT — pre-build far past the viewport so focus never hits an unbuilt-row wall." It is load-bearing for remote navigation, on exactly the platform we are targeting. Use 3.38's `cacheExtent: 2000` (confirmed present in `ListView`). |
+| `ReorderableListView`'s `onReorderItem:` (3.38 has `onReorder:`) | `screens/settings/home_sections_filter_page.dart` (1023/1027), `screens/settings/quick_play_settings_page.dart` (565/570), `screens/settings/sidebar_customization_page.dart` (354/363), `screens/settings/widgets/manual_order_list.dart` (516/521) | **Not a plain rename — see the off-by-one trap below.** |
+| `TickerMode.valuesOf` | `widgets/movie_watched_badge.dart` (56, 71) | Use `TickerMode.of(context)`, which returns the `bool` directly (confirmed present in 3.38). Drop the `.enabled`. |
+
+#### The `onReorder` off-by-one trap
+
+Do not mechanically rename `onReorderItem:` to `onReorder:`. They have **different index
+semantics**, and Debrify's handler is written for the new one.
+
+`ManualOrderList` forwards to `onMove`, typed `void Function(int from, int to)`, and every
+implementation (e.g. `screens/settings/iptv_channel_order_page.dart:191`) does:
+
+```dart
+final item = _items.removeAt(from);
+_items.insert(to, item);
+```
+
+That is **post-removal** indexing — what `onReorderItem` supplies. Classic `onReorder`
+(`typedef ReorderCallback = void Function(int oldIndex, int newIndex)`, unchanged in 3.38)
+reports `newIndex` computed *before* the item is removed, so dragging an item **downward** lands
+it one position short. The shim must re-adjust:
+
+```dart
+onReorder: widget.enabled
+    ? (oldIndex, newIndex) =>
+        widget.onMove(oldIndex, newIndex > oldIndex ? newIndex - 1 : newIndex)
+    : (_, __) {},
+```
+
+Only `manual_order_list.dart:521` constructs the `ReorderableListView`; the other three files are
+its callers and should need no change once this one is fixed. `_move`'s existing
+`to >= _items.length` guard stays correct — an end-of-list drop gives `newIndex == length`, which
+the adjustment brings back into range.
+
+**Preferred shape: target the 3.38 API surface, not a conditional.** Dart has no preprocessor, so
+a version-conditional is awkward. All three older APIs (`cacheExtent`, `TickerMode.of`,
+`onReorder`) are expected to still exist in 3.44 — write to those once and both toolchains
+compile from a single code path. **Verify with `flutter analyze` on both 3.38.10 and 3.44.8
+before merging**; that dual-version check is the acceptance test for this work.
 
 **Ignore the package noise.** The run also reports 917 errors under `packages/`, but 834 are in
 `packages/media_kit_patched/`'s **own test suite**, which has no `test` dev-dependency to resolve
@@ -273,9 +310,14 @@ caveat stated honestly, alongside `docs/iOS-Installation.md`.
 
 ## 8. Open questions
 
-1. **Is the available TV running webOS 26?** A webOS TV is confirmed available; the OS version is
-   not. `flutter-webos` requires webOS 26+, so this is still the hard gate for everything past
-   Phase 0. Check under Settings → Support → TV Information.
+1. ~~**Is the available TV running webOS 26?**~~ **Answered: no — it is on webOS 25.** This blocks
+   Phase 0 outright: `flutter-webos` builds only for webOS 26+.
+   **But the wait is likely short.** A webOS 25 set is a 2025 model, and 2025 models are the
+   *first* cohort in the webOS 26 Re:New rollout, which began 22 Aug 2026 with the G5 OLED;
+   C5/B5 and 2025 LCD models were slated to follow "within days and weeks" (2024/2023/2022 sets
+   wait until late 2026 / early 2027). So the action is: **check Settings → Support → Software
+   Update periodically**, and start Phase 0 the day webOS 26 lands. Do not rewrite the app for
+   Route B to work around a wait measured in weeks.
 2. Does `video_player_webos` expose embedded track selection in practice? Decides whether Phase 2
    is "adapt" or "lose a feature".
 3. What does `Platform.operatingSystem` actually return?
@@ -287,7 +329,8 @@ caveat stated honestly, alongside `docs/iOS-Installation.md`.
 
 ## 9. What would kill this
 
-- No webOS **26** hardware (an older webOS TV does not unblock this).
+- No webOS **26** hardware. Currently the live blocker: the available TV is on webOS 25. An
+  older webOS TV does not unblock this — the minimum is a hard SDK floor, not a soft one.
 - ~~Debrify does not compile on Flutter 3.38.~~ Ruled out — see §6.
 - `video_player_webos` has no track selection *and* no path to it — Debrify's playback identity
   is multi-track/multi-subtitle handling, and a player that cannot switch audio tracks is a
