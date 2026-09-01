@@ -61,6 +61,7 @@ import '../../services/profiles/profile_preferences.dart';
 
 import '../../services/live_recording_service.dart';
 import '../recording_limit_dialogs.dart';
+import '../../utils/platform_util.dart';
 
 typedef _TabletChannelIdentity = ({
   int? channelNumber,
@@ -175,7 +176,7 @@ class IptvResultsViewState extends State<IptvResultsView>
   /// Large touch tablets use the same shell with a fixed center selector;
   /// phones and constrained tablet windows keep the single-pane list.
   static final bool _isDesktop =
-      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+      !kIsWeb && (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux);
 
   static const double tabletTwoPaneMinWidth = 900;
   static const double tabletTwoPaneMinHeight = 500;

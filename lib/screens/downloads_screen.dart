@@ -16,6 +16,7 @@ import '../services/android_native_downloader.dart';
 import '../services/main_page_bridge.dart';
 import '../widgets/shimmer.dart';
 import '../widgets/tv_text_field.dart';
+import '../utils/platform_util.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -397,7 +398,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       // Preview only — the authoritative path is resolved by
       // DownloadService at start (same custom-folder pref + fallback).
       String? customDir;
-      if (Platform.isWindows || Platform.isLinux) {
+      if (Platform.isWindows || PlatformUtil.isDesktopLinux) {
         try {
           customDir = await StorageService.getDownloadDirPath();
         } catch (_) {}

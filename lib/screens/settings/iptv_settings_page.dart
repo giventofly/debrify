@@ -211,7 +211,7 @@ class _IptvSettingsPageState extends State<IptvSettingsPage>
   // native one — and both read this pref at launch.
   String _playerGuideStyle = 'classic';
   static final bool _isDesktopPlatform =
-      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+      !kIsWeb && (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux);
   bool get _appearanceVisible =>
       PlatformUtil.isAndroidTvCached || _isDesktopPlatform;
 

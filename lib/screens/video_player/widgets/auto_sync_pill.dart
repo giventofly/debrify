@@ -35,7 +35,7 @@ class AutoSyncPill extends StatefulWidget {
   const AutoSyncPill({super.key, required this.model});
 
   static bool get _isDesktop =>
-      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+      !kIsWeb && (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux);
 
   /// Corner inset the host should use: TV stays inside the overscan safe
   /// area, everything else hugs the corner more closely.

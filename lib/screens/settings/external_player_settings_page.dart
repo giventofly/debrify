@@ -475,7 +475,7 @@ class _ExternalPlayerSettingsPageState
       String linuxPreferredKey = 'system_default';
       String? linuxCustomCommand;
 
-      if (Platform.isLinux) {
+      if (PlatformUtil.isDesktopLinux) {
         installedLinux =
             await LinuxExternalPlayerServiceExtension.detectInstalledLinuxPlayers();
         linuxPreferredKey =
@@ -2109,7 +2109,7 @@ class _ExternalPlayerSettingsPageState
         Platform.isAndroid ||
         PlatformUtil.isIosMobile ||
         PlatformUtil.isTvOS ||
-        Platform.isLinux ||
+        PlatformUtil.isDesktopLinux ||
         Platform.isWindows;
 
     if (!isSupportedPlatform) {
@@ -3353,7 +3353,7 @@ class _ExternalPlayerSettingsPageState
                 ],
 
                 // Linux-specific player selection
-                if (Platform.isLinux && _defaultPlayerMode == 'external') ...[
+                if (PlatformUtil.isDesktopLinux && _defaultPlayerMode == 'external') ...[
                   const SizedBox(height: 16),
                   Card(
                     child: Column(
@@ -3400,7 +3400,7 @@ class _ExternalPlayerSettingsPageState
                 ],
 
                 // Linux Custom Command configuration
-                if (Platform.isLinux &&
+                if (PlatformUtil.isDesktopLinux &&
                     _defaultPlayerMode == 'external' &&
                     _selectedLinuxPlayer ==
                         LinuxExternalPlayer.customCommand) ...[
@@ -3538,7 +3538,7 @@ class _ExternalPlayerSettingsPageState
                 ],
 
                 // Linux external player info
-                if (Platform.isLinux && _defaultPlayerMode == 'external') ...[
+                if (PlatformUtil.isDesktopLinux && _defaultPlayerMode == 'external') ...[
                   const SizedBox(height: 16),
                   SettingsInfoBanner(
                     text:

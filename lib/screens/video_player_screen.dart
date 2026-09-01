@@ -1522,7 +1522,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     } catch (_) {
       // Wakelock not supported on this platform (e.g., Linux)
     }
-    if (Platform.isWindows || Platform.isLinux) {
+    if (Platform.isWindows || PlatformUtil.isDesktopLinux) {
       windowManager.setFullScreen(true);
     }
     // System volume UI not modified
@@ -10857,7 +10857,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     } catch (_) {
       // Wakelock not supported on this platform (e.g., Linux)
     }
-    if (Platform.isWindows || Platform.isLinux) {
+    if (Platform.isWindows || PlatformUtil.isDesktopLinux) {
       windowManager.setFullScreen(false);
     }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -13503,7 +13503,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             // F / F11: toggle fullscreen on Windows/Linux
             if ((key == LogicalKeyboardKey.keyF ||
                     key == LogicalKeyboardKey.f11) &&
-                (Platform.isWindows || Platform.isLinux)) {
+                (Platform.isWindows || PlatformUtil.isDesktopLinux)) {
               windowManager.isFullScreen().then((isFullScreen) {
                 if (!mounted) return;
                 windowManager.setFullScreen(!isFullScreen);
@@ -13523,7 +13523,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             // Escape key: exit fullscreen first, then quit the player
             if (key == LogicalKeyboardKey.escape) {
               // On Windows/Linux desktop, exit fullscreen first if in fullscreen
-              if (Platform.isWindows || Platform.isLinux) {
+              if (Platform.isWindows || PlatformUtil.isDesktopLinux) {
                 windowManager.isFullScreen().then((isFullScreen) {
                   if (!mounted) return; // Safety check for async callback
                   if (isFullScreen) {
@@ -13992,7 +13992,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                                   // Windows/Linux; macOS and mobile leave it
                                   // to the OS, so the button would be a lie.
                                   showFullscreen:
-                                      Platform.isWindows || Platform.isLinux,
+                                      Platform.isWindows || PlatformUtil.isDesktopLinux,
                                   onFullscreen: () async {
                                     final isFull = await windowManager
                                         .isFullScreen();

@@ -291,18 +291,18 @@ Future<void> _mainUnchecked(List<String> launchArguments) async {
       ),
     },
   );
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+  if (!kIsWeb && (Platform.isWindows || PlatformUtil.isDesktopLinux)) {
     await windowManager.ensureInitialized();
   }
 
   // Initialize sqflite FFI for Windows/Linux desktop (sqflite needs FFI on these platforms)
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+  if (!kIsWeb && (Platform.isWindows || PlatformUtil.isDesktopLinux)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
 
   if (!kIsWeb &&
-      (Platform.isMacOS || Platform.isWindows || Platform.isLinux) &&
+      (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux) &&
       !await DesktopSingleInstance.acquire(launchArguments)) {
     exit(0);
   }
@@ -520,7 +520,7 @@ class _MigrationUpdateScreen extends StatelessWidget {
 }
 
 Future<void> _terminateAfterDeviceReset() async {
-  if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+  if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux)) {
     exit(0);
   }
   await SystemNavigator.pop();
@@ -730,7 +730,7 @@ Future<void> _continueApplicationStartup() async {
     unawaited(_prewarmIptvCatalogDb());
   });
 
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+  if (!kIsWeb && (Platform.isWindows || PlatformUtil.isDesktopLinux)) {
     windowManager.waitUntilReadyToShow().then((_) async {
       await windowManager.show();
       await windowManager.focus();
@@ -1063,7 +1063,7 @@ class _DebrifyAppState extends State<DebrifyApp> {
           onPointerHover: (_) => IdleDim.instance.noteInput(),
           child: content,
         );
-        if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+        if (!kIsWeb && (Platform.isWindows || PlatformUtil.isDesktopLinux)) {
           content = Focus(
             autofocus: false,
             canRequestFocus: false,
@@ -3445,7 +3445,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
 
     // Desktop platforms: Don't exit on back button
     // Users close windows using OS controls (X button, Cmd+Q, etc.)
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    if (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux) {
       return; // Do nothing
     }
 

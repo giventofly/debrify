@@ -375,7 +375,7 @@ class HeroTrailerBackdropState extends State<HeroTrailerBackdrop>
   /// regain focus while the external player is still going.
   void _onExternalPlayerLaunched() {
     final desktop =
-        !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+        !kIsWeb && (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux);
     if (!desktop) return;
     _stoppedForExternalPlayback = true;
     _teardownPlayer();

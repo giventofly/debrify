@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:path/path.dart' as p;
 
 import '../../utils/app_storage.dart';
+import '../../utils/platform_util.dart';
 
 /// Cross-platform desktop primary-instance lock and authenticated loopback
 /// argument forwarding. The lock is acquired before any profile registry is
@@ -36,7 +37,7 @@ class DesktopSingleInstance {
   /// Returns false only in the secondary process, after best-effort forwarding
   /// to the authenticated primary endpoint.
   static Future<bool> acquire(List<String> launchArguments) async {
-    if (!(Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    if (!(Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux)) {
       return true;
     }
     final support = await AppStorage.support();

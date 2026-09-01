@@ -53,7 +53,36 @@ class PlatformUtil {
   /// for [isAndroidTvCached] only when something is specific to Android the
   /// platform (the native player handoff, Android intents, the recording
   /// engine) — those have no Apple TV counterpart and must NOT light up here.
-  static bool get isTelevision => isAndroidTvCached || isTvOS;
+  static bool get isTelevision => isAndroidTvCached || isTvOS || isWebOS;
+
+  /// Whether this build targets **LG webOS** (the `flutter-webos` SDK).
+  ///
+  /// A compile-time constant, set by the webOS build with
+  /// `--dart-define=DEBRIFY_WEBOS=true`. It is deliberately NOT derived from
+  /// `Platform.operatingSystem`: **webOS is Linux**, and the embedder is
+  /// expected to report `"linux"`, so every desktop branch in the app would
+  /// otherwise light up on a television — window sizing, the desktop recorder,
+  /// external-player launch commands, the Linux secret vault. This is the same
+  /// trap as `Platform.isIOS` being true on Apple TV (see [isTvOS]), one
+  /// platform over.
+  ///
+  /// Being `const` means the webOS-only and desktop-only branches tree-shake
+  /// out of the builds that cannot reach them.
+  static const bool isWebOS = bool.fromEnvironment('DEBRIFY_WEBOS');
+
+  /// **Desktop** Linux — a computer, not a webOS television.
+  ///
+  /// This is what nearly every `Platform.isLinux` in this app actually means:
+  /// a GTK window, an `xdg-open`-able external player, a writable download
+  /// folder, libsecret. Prefer it over the bare `Platform.isLinux`, which
+  /// silently includes webOS.
+  static bool get isDesktopLinux => !kIsWeb && !isWebOS && Platform.isLinux;
+
+  /// A desktop computer — macOS, Windows or desktop Linux. Never webOS.
+  static bool get isDesktop =>
+      !kIsWeb &&
+      !isWebOS &&
+      (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
 
   /// Platforms whose bundled libmpv carries the passive auto-sync analysis
   /// filters (astats/aspectralstats/ametadata), verified per build source:
@@ -67,7 +96,7 @@ class PlatformUtil {
       !kIsWeb &&
       (Platform.isAndroid ||
           Platform.isMacOS ||
-          Platform.isLinux ||
+          isDesktopLinux ||
           isTvOS);
 
   /// A hand-held phone or tablet — not a TV, a desktop or the web.

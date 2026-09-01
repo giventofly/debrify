@@ -1638,7 +1638,7 @@ class VideoPlayerLauncher {
         }
         return false;
       }
-    } else if (Platform.isLinux) {
+    } else if (PlatformUtil.isDesktopLinux) {
       // Linux: Use command line to launch preferred external player
       final result =
           await LinuxExternalPlayerServiceExtension.launchWithPreferredLinuxPlayer(

@@ -80,7 +80,7 @@ class _ProfileRecoveryScreenState extends State<ProfileRecoveryScreen> {
   }
 
   Future<String?> _linuxVaultPassphrase() async {
-    if (!Platform.isLinux || DeviceKeyProvider.isUnlocked) return null;
+    if (!PlatformUtil.isDesktopLinux || DeviceKeyProvider.isUnlocked) return null;
     return _promptSecret(
       'Unlock device vault',
       await DeviceKeyProvider.linuxHasWrappedKey()
@@ -156,7 +156,7 @@ class _ProfileRecoveryScreenState extends State<ProfileRecoveryScreen> {
       }
 
       final linuxPassphrase = await _linuxVaultPassphrase();
-      if (Platform.isLinux &&
+      if (PlatformUtil.isDesktopLinux &&
           !DeviceKeyProvider.isUnlocked &&
           linuxPassphrase == null) {
         return 'Restore cancelled.';
@@ -190,7 +190,7 @@ class _ProfileRecoveryScreenState extends State<ProfileRecoveryScreen> {
   Future<void> _continueWithRecoveryAdmin() async {
     await _run(() async {
       final linuxPassphrase = await _linuxVaultPassphrase();
-      if (Platform.isLinux &&
+      if (PlatformUtil.isDesktopLinux &&
           !DeviceKeyProvider.isUnlocked &&
           linuxPassphrase == null) {
         return 'Recovery cancelled.';
@@ -226,7 +226,7 @@ class _ProfileRecoveryScreenState extends State<ProfileRecoveryScreen> {
     if (confirmed != true) return;
     await _run(() async {
       final linuxPassphrase = await _linuxVaultPassphrase();
-      if (Platform.isLinux &&
+      if (PlatformUtil.isDesktopLinux &&
           !DeviceKeyProvider.isUnlocked &&
           linuxPassphrase == null) {
         return 'Reset cancelled.';

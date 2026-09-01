@@ -660,7 +660,7 @@ class LinuxExternalPlayerLaunchResult {
 extension LinuxExternalPlayerServiceExtension on ExternalPlayerService {
   /// Check if a Linux player is installed using `which` command
   static Future<bool> isLinuxPlayerInstalled(LinuxExternalPlayer player) async {
-    if (!Platform.isLinux) return false;
+    if (!PlatformUtil.isDesktopLinux) return false;
     if (player == LinuxExternalPlayer.customCommand) return true;
     if (player == LinuxExternalPlayer.systemDefault) return true;
 
@@ -676,7 +676,7 @@ extension LinuxExternalPlayerServiceExtension on ExternalPlayerService {
 
   /// Detect which Linux players are installed
   static Future<Map<LinuxExternalPlayer, bool>> detectInstalledLinuxPlayers() async {
-    if (!Platform.isLinux) return {};
+    if (!PlatformUtil.isDesktopLinux) return {};
 
     final results = <LinuxExternalPlayer, bool>{};
 
@@ -697,7 +697,7 @@ extension LinuxExternalPlayerServiceExtension on ExternalPlayerService {
     String url, {
     String? title,
   }) async {
-    if (!Platform.isLinux) {
+    if (!PlatformUtil.isDesktopLinux) {
       return LinuxExternalPlayerLaunchResult.failed('Not running on Linux');
     }
 
@@ -728,7 +728,7 @@ extension LinuxExternalPlayerServiceExtension on ExternalPlayerService {
     LinuxExternalPlayer player, {
     String? title,
   }) async {
-    if (!Platform.isLinux) {
+    if (!PlatformUtil.isDesktopLinux) {
       return LinuxExternalPlayerLaunchResult.failed('Not running on Linux');
     }
 

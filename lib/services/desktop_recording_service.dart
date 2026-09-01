@@ -11,6 +11,7 @@ import 'profiles/profile_runtime.dart';
 
 import 'live_recording_service.dart'
     show LiveRecordingService, RecordingLibraryEntry;
+import '../utils/platform_util.dart';
 
 /// How a desktop capture ended.
 enum DesktopRecordingEnd {
@@ -329,7 +330,7 @@ class DesktopRecordingService {
   }
 
   bool get isSupported =>
-      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+      !kIsWeb && (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux);
 
   /// Begin capturing [url] to [path]. Returns the already-running capture if
   /// this URL is being recorded (never two connections for one channel), and

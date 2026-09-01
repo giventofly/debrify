@@ -6,6 +6,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../utils/platform_util.dart';
 
 /// Process-wide device vault selected before profile resource services open.
 /// Linux remains explicitly locked until its Secret Service/passphrase flow
@@ -19,7 +20,7 @@ class DeviceKeyProvider {
   @visibleForTesting
   static bool? debugLinuxOverride;
 
-  static bool get isLinux => debugLinuxOverride ?? Platform.isLinux;
+  static bool get isLinux => debugLinuxOverride ?? PlatformUtil.isDesktopLinux;
 
   static bool get isInitialized => _initialized;
   static bool get isUnlocked => _cipher != null;

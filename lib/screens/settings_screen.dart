@@ -160,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// handles probe failures differently and could disagree).
   bool get _iptvAppearanceSearchable =>
       PlatformUtil.isAndroidTvCached ||
-      (!kIsWeb && (Platform.isMacOS || Platform.isLinux || Platform.isWindows));
+      (!kIsWeb && (Platform.isMacOS || PlatformUtil.isDesktopLinux || Platform.isWindows));
 
   /// Custom launch command (macOS/Linux/Windows) or custom URL scheme (iOS).
   /// Android's external-player branch offers neither — it only explains the
@@ -168,7 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _customPlayerCommandSupported =>
       !kIsWeb &&
       (Platform.isMacOS ||
-          Platform.isLinux ||
+          PlatformUtil.isDesktopLinux ||
           Platform.isWindows ||
           Platform.isIOS);
 
@@ -177,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _preferredExternalPlayerSupported =>
       !kIsWeb &&
       (Platform.isMacOS ||
-          Platform.isLinux ||
+          PlatformUtil.isDesktopLinux ||
           Platform.isWindows ||
           Platform.isIOS);
 
@@ -2467,7 +2467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ExternalPlayer.values.map((player) => player.displayName),
         );
       }
-      if (Platform.isLinux) {
+      if (PlatformUtil.isDesktopLinux) {
         return optionLabels(
           LinuxExternalPlayer.values.map((player) => player.displayName),
         );
@@ -5584,7 +5584,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // deliberately excluded: the sandbox grants read-only user-selected access,
   // so a writable custom folder needs security-scoped bookmarks (own feature).
   bool get _downloadLocationSupported =>
-      !kIsWeb && (Platform.isAndroid || Platform.isWindows || Platform.isLinux);
+      !kIsWeb && (Platform.isAndroid || Platform.isWindows || PlatformUtil.isDesktopLinux);
 
   bool get _downloadLocationUsesSaf => !kIsWeb && Platform.isAndroid;
 
@@ -5958,7 +5958,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         registry: ProfileBootstrap.registry,
         authorization: authorization!,
       );
-      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+      if (Platform.isMacOS || Platform.isWindows || PlatformUtil.isDesktopLinux) {
         exit(0);
       }
       await SystemNavigator.pop();

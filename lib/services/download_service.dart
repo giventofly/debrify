@@ -24,6 +24,7 @@ import 'profiles/profile_bootstrap.dart';
 import 'profiles/profile_credential_facade.dart';
 import 'profiles/profile_runtime.dart';
 import 'package:synchronized/synchronized.dart';
+import '../utils/platform_util.dart';
 
 class DownloadEntry {
   final Task task;
@@ -2889,7 +2890,7 @@ class DownloadService {
     // drive unplugged, network mount not up yet, AV briefly locking files),
     // so this download falls back to the default and the setting survives
     // for when the folder comes back.
-    if (Platform.isWindows || Platform.isLinux) {
+    if (Platform.isWindows || PlatformUtil.isDesktopLinux) {
       try {
         final saved = await StorageService.getDownloadDirPath();
         if (saved != null && saved.isNotEmpty) {

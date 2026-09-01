@@ -139,7 +139,12 @@ class AnalyticsService {
     if (Platform.isIOS) return 'ios';
     if (Platform.isMacOS) return 'macos';
     if (Platform.isWindows) return 'windows';
-    if (Platform.isLinux) return 'linux';
+    // Before the isDesktopLinux check: webOS IS Linux, but a television is a
+    // different install to reason about than a Linux desktop — and
+    // isDesktopLinux deliberately excludes it, so without this branch a webOS
+    // install would report 'unknown'.
+    if (PlatformUtil.isWebOS) return 'webos';
+    if (PlatformUtil.isDesktopLinux) return 'linux';
     return 'unknown';
   }
 
